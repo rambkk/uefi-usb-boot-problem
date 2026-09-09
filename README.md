@@ -173,6 +173,8 @@ RedHat Boot Manager     \EFI\Redhat\elilo.efi
 ubuntu                  \EFI\Ubuntu\shimx64.efi
 Suse Boot Manager       \EFI\Suse\elilo.efi
 Windows Boot Manager    \EFI\Microsoft\Boot\bootmgfw.efi
+sles12                  \EFI\sles12\grubx64.efi
+sles12-secureboot       \EFI\sles12\shim.efi
 ```
 
 For example, placing an EFI executable at:
