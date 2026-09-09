@@ -51,8 +51,6 @@ This project documents the investigation, commands used to examine devices and b
 ---
 
 ## Background
-Yes. I’d incorporate Haiku mainly as another example of an **explicit NVRAM entry**, while also fixing the duplicate `Boot0005` numbering in your example. The Lexar entries should be `Boot0006` and `Boot0007`.
-
 ### UEFI Boot Entries Introduction
 
 UEFI systems provide several mechanisms for discovering and launching EFI applications. One of the most important is the use of **UEFI boot entries** stored in NVRAM. A boot entry identifies a device or partition and, typically, the EFI executable to launch.
