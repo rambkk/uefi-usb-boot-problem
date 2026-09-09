@@ -20,6 +20,7 @@ This project documents the investigation, commands used to examine devices and b
 
 - Background
 - The Initial Problem: Ventoy
+- Workaround Solution
 - What Is Being Investigated
 - USB Storage Device Classification
   - Removable vs Fixed
@@ -86,16 +87,10 @@ Some systems appear to apply additional rules when enumerating USB storage devic
 This project investigates some of those behaviors.
 
 ---
-
 # The Initial Problem: Ventoy
-
-The investigation began while trying to install [Ventoy](<https://www.ventoy.net/>) on a USB flash drive.
-Ventoy was installed successfully and the USB drive could be accessed normally from the operating system.
-However, the notebook's UEFI firmware did not automatically boot the Ventoy EFI loader from the USB drive.
-This was interesting because the problem did not initially look like a corrupted filesystem or missing EFI executable.
+The investigation began while trying to install [Ventoy](<https://www.ventoy.net/>) on a USB flash drive. Ventoy was installed successfully and the USB drive could be accessed normally from the operating system. However, the notebook's UEFI firmware did not automatically boot the Ventoy EFI loader from the USB drive. This was interesting because the problem did not initially look like a corrupted filesystem or missing EFI executable.
 
 The investigation therefore moved through several questions:
-
 ```
 Is the USB device detected by the OS?
             │
@@ -118,36 +113,106 @@ Does the firmware attempt \EFI\BOOT\BOOTX64.EFI?
 Does the firmware have additional
 vendor-specific EFI paths or boot rules?
 ```
-
 The purpose of this project is to document those questions and the experiments used to investigate them.
 
 ---
 ## Workaround Solution
-The following workaround was found to make the Ventoy USB drive appear as a **Windows Boot Manager** entry in the UEFI boot selection menu. This was tested on the affected MSI notebook and allowed the system to boot into Ventoy successfully.
+The following workaround was found to make the Ventoy USB drive appear as a **Windows Boot Manager** entry in the UEFI boot selection menu.
+
+This was tested on the affected MSI notebook and allowed the system to boot into Ventoy successfully.
 
 ### Steps
-On the EFI System Partition of the Ventoy USB drive, create the following directories:
+On the EFI System Partition of the Ventoy USB drive, create the following directory:
 ```
 EFI/
 └── MICROSOFT/
     └── BOOT/
 ```
-The resulting directory structure should include:
+The existing Ventoy EFI directory contains several files. The files relevant to this workaround are:
+```
+EFI/
+└── BOOT/
+    ├── ...
+    ├── BOOTX64.EFI
+    ├── ...
+    ├── grubx64_real.efi
+    ├── ...
+    └── fbx64.efi
+```
+
+Copy the Ventoy `BOOTX64.EFI` to the Microsoft-style bootloader path:
+```
+/EFI/BOOT/BOOTX64.EFI
+    └──> /EFI/MICROSOFT/BOOT/bootmgfw.efi
+```
+
+Then there are **two possible ways** to provide the second EFI executable.
+#### Option 1: Copy `grubx64_real.efi`
+Copy:
+```
+/EFI/BOOT/grubx64_real.efi
+```
+to:
+```
+/EFI/MICROSOFT/BOOT/grubx64.efi
+```
+
+The relevant resulting files are:
 ```
 EFI/
 ├── BOOT/
-│   └── BOOTX64.EFI
+│   ├── ...
+│   ├── BOOTX64.EFI
+│   ├── ...
+│   ├── grubx64_real.efi
+│   ├── ...
+│   └── fbx64.efi
 │
 └── MICROSOFT/
     └── BOOT/
         ├── bootmgfw.efi
-        └── fbx64.efi
+        └── grubx64.efi
 ```
-Copy the Ventoy EFI bootloader:
-copy ``` /EFI/BOOT/BOOTX64.EFI ``` to ``` /EFI/MICROSOFT/BOOT/bootmgfw.efi ```
-copy ``` /EFI/BOOT/fbx64.efi ``` to ``` /EFI/MICROSOFT/BOOT/grub64.efi ```
 
-In other words:
+The resulting relationship is:
+```
+EFI/BOOT/BOOTX64.EFI
+        │
+        └──> EFI/MICROSOFT/BOOT/bootmgfw.efi
+
+EFI/BOOT/grubx64_real.efi
+        │
+        └──> EFI/MICROSOFT/BOOT/grubx64.efi
+```
+
+#### Option 2: Copy `fbx64.efi`
+Alternatively, instead of copying `grubx64_real.efi`, copy:
+```
+/EFI/BOOT/fbx64.efi
+```
+to:
+```
+/EFI/MICROSOFT/BOOT/grubx64.efi
+```
+
+The relevant resulting files are:
+```
+EFI/
+├── BOOT/
+│   ├── ...
+│   ├── BOOTX64.EFI
+│   ├── ...
+│   ├── grubx64_real.efi
+│   ├── ...
+│   └── fbx64.efi
+│
+└── MICROSOFT/
+    └── BOOT/
+        ├── bootmgfw.efi
+        └── grubx64.efi
+```
+
+The resulting relationship is:
 ```
 EFI/BOOT/BOOTX64.EFI
         │
@@ -155,39 +220,40 @@ EFI/BOOT/BOOTX64.EFI
 
 EFI/BOOT/fbx64.efi
         │
-        └──> EFI/MICROSOFT/BOOT/fbx64.efi
+        └──> EFI/MICROSOFT/BOOT/grubx64.efi
+                    │
+                    └──> launches EFI/BOOT/grubx64_real.efi
 ```
+This second variant also works because `fbx64.efi` acts as Ventoy's fallback mechanism and is able to locate and launch `grubx64_real.efi`.
 
 ### Result
 After making these changes and rebooting into the UEFI boot selection menu, a new entry appeared:
+
 ```
 Windows Boot Manager
 ```
-Selecting this **Windows Boot Manager** entry launched the Ventoy EFI bootloader, and the system successfully entered the Ventoy menu.
+Selecting **Windows Boot Manager** launched the Ventoy EFI bootloader, and the system successfully entered the Ventoy menu.
 
 ### Why this is interesting
 This suggests that the firmware was willing to recognize and offer an EFI executable located at the Microsoft-style boot path:
-```
-\EFI\MICROSOFT\BOOT\bootmgfw.efi
+```\EFI\MICROSOFT\BOOT\bootmgfw.efi
 ```
 even though it did not automatically offer the Ventoy removable-media fallback loader:
 ```
 \EFI\BOOT\BOOTX64.EFI
 ```
-The `fbx64.efi` copy was also created because the Ventoy the original BOOTX64.EFI needs it to be in the same folder and the new bootmgfw.efi is exactly the same.
-
-This workaround does **not** replace the standard UEFI removable-media boot path. The original:
-```
-\EFI\BOOT\BOOTX64.EFI
-```
-remains in place.
-
-The workaround instead provides the same Ventoy EFI executable at paths that the affected firmware recognizes as a Windows boot target.
+The important part of the workaround is that `bootmgfw.efi` is actually a copy of Ventoy's `BOOTX64.EFI`.
 
 ### Important limitation
-This behavior has only been confirmed on the system tested as part of this investigation. It should not be assumed that the same workaround will work on every motherboard or UEFI implementation. The workaround is particularly useful as an experimental observation because it provides a clue about how the firmware is discovering EFI bootloaders.
+This behavior has only been confirmed on the system tested as part of this investigation. It should not be assumed that the same workaround will work on every motherboard or UEFI implementation.
 
+The workaround is particularly useful as an experimental observation because it provides a clue about how the firmware is discovering EFI bootloaders.
 
+It demonstrates that the firmware can discover an EFI executable through the Microsoft-style boot path even when it does not automatically expose the standard Ventoy removable-media fallback path as a boot option.
+
+I think `...` is exactly the right convention here: it communicates **"other Ventoy files exist; these are just the relevant ones"** without making the README unnecessarily dependent on a particular Ventoy version's directory contents.
+
+---
 # What Is Being Investigated
 The project focuses on two related but distinct mechanisms.
 
