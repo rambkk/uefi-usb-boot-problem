@@ -690,8 +690,6 @@ Firmware EFI file paths (excluding `\EFI\BOOT\BOOTX64.EFI`):
 \EFI\Microsoft\Boot\bootmgfw.efi
 \EFI\sles12\grubx64.efi
 \EFI\sles12\shim.efi
-\EFI\sles12\grubx64.efi
-\EFI\sles12\shim.efi
 ```
 The MSI example is intended as a **case study**, rather than a claim that all MSI systems behave identically. Different MSI notebook models, firmware versions, and UEFI implementations may behave differently.
 ---
