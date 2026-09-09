@@ -15,38 +15,65 @@ This led to an investigation into two related areas:
 This project documents the investigation, commands used to examine devices and boot entries, experiments, and a case study based on an MSI notebook firmware image.
 
 ---
+## Table of Contents
 
- ## Table of Contents
-
-- Background
-- The Initial Problem: Ventoy
-- Workaround Solution
-- What Is Being Investigated
-- USB Storage Device Classification
-  - Removable vs Fixed
-  - Linux
-  - Windows
-  - Why This Matters to UEFI
-- UEFI Boot Entries
-  - UEFI Boot Variables
-  - Linux: efibootmgr
-  - Windows: bcdedit
-- EFI Fallback Boot Paths
-  - BOOTX64.EFI
-  - Explicit Boot Entries vs Fallback Discovery
-  - Firmware-Specific Paths
-- MSI Firmware Case Study
-  - Firmware Extraction
-  - EFI Path Strings
-- Boot Discovery Model
-- Troubleshooting Methodology
-- Experiments
-- Repository Structure
-- Limitations
-- Safety and Caution
-- Goals of This Project
-- Further Research
-- License
+- [Background](#background)
+  - [UEFI Boot Entries Introduction](#uefi-boot-entries-introduction)
+- [The Initial Problem: Ventoy](#the-initial-problem-ventoy)
+- [Workaround Solution](#workaround-solution)
+  - [Steps](#steps)
+  - [Option 1: Copy `grubx64_real.efi`](#option-1-copy-grubx64_realefi)
+  - [Option 2: Copy `fbx64.efi`](#option-2-copy-fbx64efi)
+  - [Result](#result)
+  - [Why this is interesting](#why-this-is-interesting)
+  - [Important limitation](#important-limitation)
+- [What Is Being Investigated](#what-is-being-investigated)
+  - [USB storage classification](#usb-storage-classification)
+  - [UEFI boot configuration](#uefi-boot-configuration)
+  - [Firmware-specific discovery](#firmware-specific-discovery)
+- [USB Storage Device Classification](#usb-storage-device-classification)
+  - [Removable vs Fixed](#removable-vs-fixed)
+  - [Linux](#linux)
+  - [Using lsblk](#using-lsblk)
+  - [sysfs](#sysfs)
+  - [udev information](#udev-information)
+  - [Windows](#windows)
+- [Why This Matters to UEFI](#why-this-matters-to-uefi)
+- [UEFI Boot Entries](#uefi-boot-entries)
+  - [UEFI Boot Variables](#uefi-boot-variables)
+- [Linux: efibootmgr](#linux-efibootmgr)
+  - [Changing boot order](#changing-boot-order)
+  - [Important caution](#important-caution)
+- [Windows: bcdedit](#windows-bcdedit)
+- [EFI Fallback Boot Paths](#efi-fallback-boot-paths)
+  - [BOOTX64.EFI](#bootx64efi)
+  - [Explicit Boot Entries vs. Fallback Discovery](#explicit-boot-entries-vs-fallback-discovery)
+- [Firmware-Specific Paths](#firmware-specific-paths)
+- [MSI Firmware Case Study](#msi-firmware-case-study)
+  - [Firmware Extraction](#firmware-extraction)
+  - [EFI Path Strings](#efi-path-strings)
+- [Boot Discovery Model](#boot-discovery-model)
+- [Troubleshooting Methodology](#troubleshooting-methodology)
+  - [Step 1: Confirm the USB device is detected](#step-1-confirm-the-usb-device-is-detected)
+  - [Step 2: Determine how the operating system classifies it](#step-2-determine-how-the-operating-system-classifies-it)
+  - [Step 3: Check the EFI filesystem](#step-3-check-the-efi-filesystem)
+  - [Step 4: Check UEFI NVRAM entries](#step-4-check-uefi-nvram-entries)
+  - [Step 5: Test the firmware's boot menu](#step-5-test-the-firmwares-boot-menu)
+  - [Step 6: Investigate firmware-specific behavior](#step-6-investigate-firmware-specific-behavior)
+- [Experiments](#experiments)
+  - [Potential A/B Tests](#potential-ab-tests)
+- [Limitations](#limitations)
+  - [UEFI implementations differ](#uefi-implementations-differ)
+  - ["Removable" is not a single universal property](#removable-is-not-a-single-universal-property)
+  - [BOOTX64.EFI does not guarantee bootability](#bootx64efi-does-not-guarantee-bootability)
+  - [Firmware strings are not proof of behavior](#firmware-strings-are-not-proof-of-behavior)
+- [Safety and Caution](#safety-and-caution)
+- [Further Research](#further-research)
+  - [USB device characteristics](#usb-device-characteristics)
+  - [Firmware behavior](#firmware-behavior)
+  - [Firmware version comparison](#firmware-version-comparison)
+  - [Cross-vendor comparison](#cross-vendor-comparison)
+- [Conclusion](#conclusion)
 
 ---
 
@@ -136,11 +163,6 @@ vendor-specific EFI paths or boot rules?
 The purpose of this project is to document those questions and the experiments used to investigate them.
 
 ---
-## Workaround Solution
-Here’s a cleaner version that makes the distinction between the **NVRAM approach** and the **firmware automatic-detection workaround** clear:
-
- Workaround Solution
-
 ## Workaround Solution
 
  The simplest solution is to create a UEFI NVRAM boot entry that points directly to Ventoy's:
