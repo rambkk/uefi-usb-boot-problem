@@ -77,7 +77,11 @@ The `Ventoy` entry (`Boot0004`) and `Haiku OS` entry (`Boot0005`) were **manuall
 \EFI\BOOT\BOOTX64.EFI
 \EFI\Haiku\BOOTX64.EFI
 ```
-Their names can be customized when creating the entries, for example using `efibootmgr`.
+Their names can be customized when creating the entries, for example using `efibootmgr` in Linux:
+```
+efibootmgr --create --disk /dev/sda --part 2 --label "Ventoy" --loader '\EFI\BOOT\BOOTX64.EFI'
+efibootmgr --create --disk /dev/sda --part 4 --label "Haiku OS" --loader '\EFI\Haiku\BOOTX64.EFI'
+```
 
 In contrast, several other entries contain additional data after the EFI filename:
 ```
