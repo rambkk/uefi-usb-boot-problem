@@ -236,7 +236,8 @@ Selecting **Windows Boot Manager** launched the Ventoy EFI bootloader, and the s
 
 ### Why this is interesting
 This suggests that the firmware was willing to recognize and offer an EFI executable located at the Microsoft-style boot path:
-```\EFI\MICROSOFT\BOOT\bootmgfw.efi
+```
+\EFI\MICROSOFT\BOOT\bootmgfw.efi
 ```
 even though it did not automatically offer the Ventoy removable-media fallback loader:
 ```
@@ -250,8 +251,6 @@ This behavior has only been confirmed on the system tested as part of this inves
 The workaround is particularly useful as an experimental observation because it provides a clue about how the firmware is discovering EFI bootloaders.
 
 It demonstrates that the firmware can discover an EFI executable through the Microsoft-style boot path even when it does not automatically expose the standard Ventoy removable-media fallback path as a boot option.
-
-I think `...` is exactly the right convention here: it communicates **"other Ventoy files exist; these are just the relevant ones"** without making the README unnecessarily dependent on a particular Ventoy version's directory contents.
 
 ---
 # What Is Being Investigated
