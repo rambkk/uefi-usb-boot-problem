@@ -676,7 +676,7 @@ That distinction is important throughout this project.
 
 As part of this investigation, an MSI notebook firmware image (MSI GF75-THIN 9SC)was examined. The firmware image was extracted and searched for strings corresponding to EFI executable paths. This produced a list of paths that appear to be referenced by the firmware.
 
-The extracted list is included under:
+Firmware EFI file paths (excluding `\EFI\BOOT\BOOTX64.EFI`):
 ```
 \EFI\debian\grubx64.efi
 \EFI\opensuse\grubx64.efi
@@ -688,6 +688,8 @@ The extracted list is included under:
 \EFI\Ubuntu\shimx64.efi
 \EFI\Suse\elilo.efi
 \EFI\Microsoft\Boot\bootmgfw.efi
+\EFI\sles12\grubx64.efi
+\EFI\sles12\shim.efi
 \EFI\sles12\grubx64.efi
 \EFI\sles12\shim.efi
 ```
